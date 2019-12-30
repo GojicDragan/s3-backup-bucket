@@ -1,0 +1,76 @@
+service: reamis-s3-backup-bucket
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+  stage: ${opt:stage, 'dev'}
+  region: eu-central-1
+
+resources:
+  Resources:
+    ReamisS3BackupBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        AccelerateConfiguration:
+          AccelerationStatus: Enabled
+        AccessControl: Private
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+        CorsConfiguration:
+          CorsRules:
+            -
+              AllowedHeaders:
+                - "*"
+              AllowedMethods:
+                - GET
+                - POST
+                - PUT
+                - DELETE
+              AllowedOrigins:
+                - "*" 
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: TRUE           
+          BlockPublicPolicy: TRUE
+          IgnorePublicAcls: TRUE
+          RestrictPublicBuckets: TRUE
+        VersioningConfiguration:
+          Status: Enabled  
+    ReamisS3BackupBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: ReamisS3BackupBucket
+        PolicyDocument:
+          Statement:
+            -
+              Effect: Allow
+              Action:
+                - "s3:*"
+              Principal:
+                AWS:
+                  Ref: AWS::AccountId
+              Resource:
+                Fn::Join:
+                  - ""
+                  -
+                    -
+                      Fn::GetAtt: [ReamisS3BackupBucket, Arn]
+                    - "/*"          
+
+  Outputs:
+    ReamisS3BackupBucketRN:
+      Description: "Resource Name of the s3 backup bucket for reamis"
+      Value:
+        Ref:  ReamisS3BackupBucket
+    ReamisS3BackupBucketARN:
+      Description:  "Amazon Resource Name of the s3 backup bucket for reamis"
+      Value:
+        Fn::GetAtt: [ReamisS3BackupBucket, Arn]
+    ReamisS3BackupBucketDomainName:
+      Description: "Domain Name of the s3 backup bucket for reamis"
+      Value:
+        Fn::GetAtt: [ReamisS3BackupBucket, DomainName]   
+
